@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Demo</title>
+
+    <script>
+
+         function getCamera(){
+            csd.getCamera("js调用了android中的getCamera方法");
+         }
+
+         function setCamera(camera){
+            document.getElementById("img1").src=camera;
+         }
+
+         function getImage(){
+            csd.getImage("js调用了android中的getImage方法");
+         }
+
+         function setImage(image){
+            var imageArray = new Array();
+            imageArray[0] = document.getElementById("img11");
+            imageArray[1] = document.getElementById("img12");
+            imageArray[2] = document.getElementById("img13");
+            imageArray[3] = document.getElementById("img14");
+            imageArray[4] = document.getElementById("img15");
+            imageArray[5] = document.getElementById("img16");
+            imageArray[6] = document.getElementById("img17");
+            imageArray[7] = document.getElementById("img18");
+            imageArray[8] = document.getElementById("img19");
+
+            var m = image.split(",");
+            for (var i = 0; i < m.length; i++){
+	            imageArray[i].src = m[i];
+            }
+         }
+
+         function getVideo(){
+            csd.getVideo("js调用了android中的getVideo方法");
+         }
+
+         function setVideo(video){
+            document.getElementById("video1").src=video;
+         }
+
+         function getAudio(){
+            csd.getAudio("js调用了android中的getAudio方法");
+         }
+
+         function setAudio(audio){
+            document.getElementById("audio1").src=audio;
+         }
+
+    </script>
+</head>
+<body>
+
+<h2>JS交互Demo</h2>
+<input type="file"/>
+<br>
+<br>
+<img src="file:///storage/sdcard0/img3.jpg" width="300" height="240">
+<img src="content://media/external/images/media/15950" width="300" height="240">
+<br>
+<img src="file:///storage/sdcard0/img1.jpg" width="300" height="240">
+<img src="content://media/external/images/media/15949" width="300" height="240">
+<br>
+<br>
+<img id="img1" width="300" height="240">
+<br>
+<input type="button" style="width:100px;height:60px;" value="拍照" onclick="getCamera()">
+<br>
+<br>
+<img id="img11" width="300" height="240">
+<img id="img12" width="300" height="240">
+<img id="img13" width="300" height="240">
+<br>
+<img id="img14" width="300" height="240">
+<img id="img15" width="300" height="240">
+<img id="img16" width="300" height="240">
+<br>
+<img id="img17" width="300" height="240">
+<img id="img18" width="300" height="240">
+<img id="img19" width="300" height="240">
+<br>
+<input type="button" style="width:100px;height:60px;" value="相册" onclick="getImage()">
+<br>
+<br>
+<video width="500" height="300" id="video1" controls>
+    <source src="file:///storage/sdcard0/Mob/cn.sharesdk.demo/cache/videos/e613d3d6ba6c1524b4abab146249dac0.mp4"
+            type="video/mp4">
+</video>
+<br>
+<input type="button" style="width:100px;height:60px;" value="视频" onclick="getVideo()">
+<br>
+<br>
+<audio width="500" height="300" id="audio1" controls>
+    <source src="file:///storage/sdcard0/kgmusic/download/金南玲 - 逆流成河.mp3" type="audio/mpeg">
+</audio>
+<br>
+<input type="button" style="width:100px;height:60px;" value="音频" onclick="getAudio()">
+</body>
+</html>
