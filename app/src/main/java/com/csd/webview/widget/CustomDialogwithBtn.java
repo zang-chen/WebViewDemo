@@ -16,13 +16,10 @@ import android.widget.TextView;
 import com.csd.webview.R;
 
 /**
- * 类名称: CSDDialogwithBtn
+ * 类名称: CustomDialogwithBtn
  * 类描述: 自定义Dialog
  * 创建人: 陈书东
- * 创建时间: 2016/9/12 15:14
- * 修改人: 无
- * 修改时间: 无
- * 修改备注: 无
+ * 创建时间: 2018/8/8 08:08
  */
 public class CustomDialogwithBtn extends Dialog {
 
@@ -37,8 +34,8 @@ public class CustomDialogwithBtn extends Dialog {
     private String content;
     private String cancel;
     private String ok;
-    private boolean cancelShow = true;//是否显示取消按键
-    private boolean okShow = true;//是否确认取消按键
+    private boolean cancelShow = true;//是否取消按键
+    private boolean okShow = true;//是否显示确认按键
     private boolean cancelShowColor;//取消按键是否变为蓝色字体
     private boolean okShowColor;//确认按键是否变为蓝色字体
     private boolean cancelable = true;//点击物理返回键dialog是否消失

@@ -4,6 +4,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+/**
+ * 类名称: MainActivity
+ * 类描述: 主页
+ * 创建人: 陈书东
+ * 创建时间: 2018/8/8 08:08
+ */
 public class MainActivity extends BaseActivity {
 
     private TextView textView;

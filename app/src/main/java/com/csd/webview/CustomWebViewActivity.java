@@ -9,13 +9,15 @@ import android.widget.RelativeLayout;
 import com.csd.webview.widget.CustomDialogwithBtn;
 
 /**
- * Created by john on 2018/8/3.
+ * 类名称: CustomWebViewActivity
+ * 类描述: 具有统一布局的的WebView页面
+ * 创建人: 陈书东
+ * 创建时间: 2018/8/8 08:08
  */
 
 public class CustomWebViewActivity extends BaseWebViewActivity {
 
     protected RelativeLayout rl_loading_faild;
-    protected LinearLayout ll_loading_faild_tip;
     protected CustomDialogwithBtn customDialogwithBtn;
     protected LinearLayout app_left;
 
@@ -28,7 +30,6 @@ public class CustomWebViewActivity extends BaseWebViewActivity {
 
     private void initViews() {
         rl_loading_faild = (RelativeLayout) findViewById(R.id.rl_loading_faild);
-        ll_loading_faild_tip = (LinearLayout) findViewById(R.id.ll_loading_faild_tip);
         app_left = (LinearLayout) findViewById(R.id.app_left);
         app_left.setVisibility(View.VISIBLE);
         app_left.setOnClickListener(new View.OnClickListener() {
@@ -45,6 +46,12 @@ public class CustomWebViewActivity extends BaseWebViewActivity {
                 } else {
                     finish();
                 }
+            }
+        });
+        rl_loading_faild.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                againLoad();
             }
         });
     }

@@ -23,9 +23,11 @@ import com.yanzhenjie.permission.Setting;
 import java.util.List;
 
 /**
- * Created by pc on 2018/10/16.
+ * 类名称: BaseActivity
+ * 类描述: 页面基类中做动态权限申请相关处理逻辑
+ * 创建人: 陈书东
+ * 创建时间: 2018/8/8 08:08
  */
-
 public class BaseActivity extends AppCompatActivity {
 
     protected Toolbar toolbar;

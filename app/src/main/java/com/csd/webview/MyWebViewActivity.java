@@ -10,9 +10,11 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
- * Created by john on 2018/8/3.
+ * 类名称: MyWebViewActivity
+ * 类描述: WebView加载H5页面
+ * 创建人: 陈书东
+ * 创建时间: 2018/8/8 08:08
  */
-
 public class MyWebViewActivity extends CustomWebViewActivity {
 
     public static final String KEY_TITLE = "KEY_TITLE";
@@ -40,6 +42,15 @@ public class MyWebViewActivity extends CustomWebViewActivity {
         }
         setTitle(title);
         initDialog(title);
+        webView.loadUrl(url);
+
+        //测试加载失败点击重新加载逻辑
+//        loadingFailed();
+    }
+
+    @Override
+    protected void againLoad() {
+        super.againLoad();
         webView.loadUrl(url);
     }
 }
