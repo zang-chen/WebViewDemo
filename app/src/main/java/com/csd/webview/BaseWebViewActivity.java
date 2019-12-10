@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -21,6 +22,8 @@ import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.View;
@@ -34,16 +37,21 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
-import com.luck.picture.lib.PictureSelector;
-import com.luck.picture.lib.config.PictureConfig;
-import com.luck.picture.lib.config.PictureMimeType;
-import com.luck.picture.lib.entity.LocalMedia;
 import com.yanzhenjie.permission.Permission;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import cn.finalteam.rxgalleryfinal.RxGalleryFinal;
+import cn.finalteam.rxgalleryfinal.RxGalleryFinalApi;
+import cn.finalteam.rxgalleryfinal.bean.MediaBean;
+import cn.finalteam.rxgalleryfinal.imageloader.ImageLoaderType;
+import cn.finalteam.rxgalleryfinal.rxbus.RxBusResultDisposable;
+import cn.finalteam.rxgalleryfinal.rxbus.event.ImageMultipleResultEvent;
+import cn.finalteam.rxgalleryfinal.rxbus.event.ImageRadioResultEvent;
 
 /**
  * 类名称: BaseWebViewActivity
@@ -69,6 +77,11 @@ public class BaseWebViewActivity extends BaseActivity {
     public final static int IMAGECHOOSE_REQUESTCODE = 3;
     public final static int VIDEOCHOOSE_REQUESTCODE = 4;
     public final static int AUDIOCHOOSE_REQUESTCODE = 5;
+
+
+    private boolean isThird = false;//是否调用第三方框架选择文件
+    private List<MediaBean> list = null;
+
 
     @Override
     public void setContentView(int layoutResID) {
@@ -375,6 +388,7 @@ public class BaseWebViewActivity extends BaseActivity {
 
     @Override
     protected void cameraReadWriteStorage() {
+        isThird = false;
         File imageStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "MyApp");
         if (!imageStorageDir.exists()) {
             imageStorageDir.mkdirs();
@@ -410,38 +424,148 @@ public class BaseWebViewActivity extends BaseActivity {
     @Override
     protected void camera() {
         Log.i("CSD", "camera方法走了");
-        PictureSelector.create(BaseWebViewActivity.this)
-                .openCamera(PictureMimeType.ofImage())
-                .forResult(CAMERACHOOSE_REQUESTCODE);
+        isThird = true;
+        openCrop();
     }
 
     @Override
     protected void chooseImage() {
         Log.i("CSD", "chooseImage方法走了");
-        PictureSelector.create(BaseWebViewActivity.this)
-                .openGallery(PictureMimeType.ofImage())
-                .forResult(IMAGECHOOSE_REQUESTCODE);
+        isThird = true;
+        openMulti();
     }
 
     @Override
     protected void chooseVideo() {
         Log.i("CSD", "chooseVideo方法走了");
-        PictureSelector.create(BaseWebViewActivity.this)
-                .openGallery(PictureMimeType.ofVideo())
-                .forResult(VIDEOCHOOSE_REQUESTCODE);
+        isThird = true;
+        openVideoSelectRadioMethod();
     }
 
     @Override
     protected void chooseAudio() {
         Log.i("CSD", "chooseAudio方法走了");
-        PictureSelector.create(BaseWebViewActivity.this)
-                .openGallery(PictureMimeType.ofAudio())
-                .forResult(AUDIOCHOOSE_REQUESTCODE);
+        isThird = true;
     }
+
+
+    private void openCrop() {
+        SimpleRxGalleryFinal.get().init(
+                new SimpleRxGalleryFinal.RxGalleryFinalCropListener() {
+                    @NonNull
+                    @Override
+                    public Activity getSimpleActivity() {
+                        return BaseWebViewActivity.this;
+                    }
+
+                    @Override
+                    public void onCropCancel() {
+                        Toast.makeText(getSimpleActivity(), "裁剪被取消", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onCropSuccess(@Nullable Uri uri) {
+                        Toast.makeText(getSimpleActivity(), "裁剪成功：" + uri, Toast.LENGTH_SHORT).show();
+                        StringBuffer stringBuffer = new StringBuffer();
+                        stringBuffer.append("file://" + getRealFilePath(BaseWebViewActivity.this, uri));
+                        String result = stringBuffer.toString();
+                        //与JS方法 setCamera (camera) 交互
+                        webView.loadUrl("javascript:setCamera('" + result + "')");
+                    }
+
+                    @Override
+                    public void onCropError(@NonNull String errorMessage) {
+                        Toast.makeText(getSimpleActivity(), errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
+        ).openCamera();
+    }
+
+    public static String getRealFilePath(final Context context, final Uri uri) {
+        if (null == uri) return null;
+        final String scheme = uri.getScheme();
+        String data = null;
+        if (scheme == null)
+            data = uri.getPath();
+        else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
+            data = uri.getPath();
+        } else if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+            Cursor cursor = context.getContentResolver().query(uri, new String[]{MediaStore.Images.ImageColumns.DATA}, null, null, null);
+            if (null != cursor) {
+                if (cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+                    if (index > -1) {
+                        data = cursor.getString(index);
+                    }
+                }
+                cursor.close();
+            }
+        }
+        return data;
+    }
+
+    private void openMulti() {
+//        RxGalleryFinal.with(this).hidePreview();
+        RxGalleryFinal rxGalleryFinal = RxGalleryFinal
+                .with(BaseWebViewActivity.this)
+                .image()
+                .multiple();
+        if (list != null && !list.isEmpty()) {
+            rxGalleryFinal.selected(list);
+        }
+        rxGalleryFinal.maxSize(9)
+                .imageLoader(ImageLoaderType.GLIDE)
+                .subscribe(new RxBusResultDisposable<ImageMultipleResultEvent>() {
+
+                    @Override
+                    protected void onEvent(ImageMultipleResultEvent imageMultipleResultEvent) throws Exception {
+                        list = imageMultipleResultEvent.getResult();
+                        Toast.makeText(getBaseContext(), "已选择" + imageMultipleResultEvent.getResult().size() + "张图片", Toast.LENGTH_SHORT).show();
+                        StringBuffer stringBuffer = new StringBuffer();
+                        for (int i = 0; i < imageMultipleResultEvent.getResult().size(); i++) {
+                            Log.i("CSD", "图片文件路径:" + imageMultipleResultEvent.getResult().get(i).getOriginalPath());
+                            stringBuffer.append("file://" + imageMultipleResultEvent.getResult().get(i).getOriginalPath() + ",");
+                        }
+                        stringBuffer.deleteCharAt(stringBuffer.length() - 1);
+                        String result = stringBuffer.toString();
+                        //与JS方法 setImage (image) 交互
+                        webView.loadUrl("javascript:setImage('" + result + "')");
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        super.onComplete();
+                        Toast.makeText(getBaseContext(), "OVER", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .openGallery();
+    }
+
+    private void openVideoSelectRadioMethod() {
+        RxGalleryFinalApi
+                .getInstance(BaseWebViewActivity.this)
+                .setType(RxGalleryFinalApi.SelectRXType.TYPE_VIDEO, RxGalleryFinalApi.SelectRXType.TYPE_SELECT_RADIO)
+                .setVDRadioResultEvent(new RxBusResultDisposable<ImageRadioResultEvent>() {
+                    @Override
+                    protected void onEvent(ImageRadioResultEvent imageRadioResultEvent) throws Exception {
+                        Toast.makeText(getApplicationContext(), imageRadioResultEvent.getResult().getOriginalPath(), Toast.LENGTH_SHORT).show();
+                        StringBuffer stringBuffer = new StringBuffer();
+                        stringBuffer.append("file://" + imageRadioResultEvent.getResult().getOriginalPath());
+                        String result = stringBuffer.toString();
+                        //与JS方法 setVideo (video) 交互
+                        webView.loadUrl("javascript:setVideo('" + result + "')");
+                    }
+                })
+                .open();
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (isThird) {
+            SimpleRxGalleryFinal.get().onActivityResult(requestCode, resultCode, data);
+        }
         if (resultCode == RESULT_OK) {
             if (requestCode == FILECHOOSER_REQUESTCODE) {
                 if (null == mUploadMessage && null == mUploadCallbackAboveL) {
@@ -460,74 +584,6 @@ public class BaseWebViewActivity extends BaseActivity {
                     }
                     mUploadMessage = null;
                 }
-            } else if (requestCode == CAMERACHOOSE_REQUESTCODE && data != null) {
-                StringBuffer stringBuffer = new StringBuffer();
-                // 图片、视频、音频选择结果回调
-                List<LocalMedia> selectList = PictureSelector.obtainMultipleResult(data);
-                // 例如 LocalMedia 里面返回三种path
-                // 1.media.getPath(); 为原图path
-                // 2.media.getCutPath();为裁剪后path，需判断media.isCut();是否为true  注意：音视频除外
-                // 3.media.getCompressPath();为压缩后path，需判断media.isCompressed();是否为true  注意：音视频除外
-                // 如果裁剪并压缩了，以取压缩路径为准，因为是先裁剪后压缩的
-                for (int i = 0; i < selectList.size(); i++) {
-                    Log.i("CSD", "拍照文件路径:" + selectList.get(i).getPath());
-                    stringBuffer.append("file://" + selectList.get(i).getPath() + ",");
-                }
-                stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-                String result = stringBuffer.toString();
-                //与JS方法 setCamera (camera) 交互
-                webView.loadUrl("javascript:setCamera('" + result + "')");
-            } else if (requestCode == IMAGECHOOSE_REQUESTCODE && data != null) {
-                StringBuffer stringBuffer = new StringBuffer();
-                // 图片、视频、音频选择结果回调
-                List<LocalMedia> selectList = PictureSelector.obtainMultipleResult(data);
-                // 例如 LocalMedia 里面返回三种path
-                // 1.media.getPath(); 为原图path
-                // 2.media.getCutPath();为裁剪后path，需判断media.isCut();是否为true  注意：音视频除外
-                // 3.media.getCompressPath();为压缩后path，需判断media.isCompressed();是否为true  注意：音视频除外
-                // 如果裁剪并压缩了，以取压缩路径为准，因为是先裁剪后压缩的
-                for (int i = 0; i < selectList.size(); i++) {
-                    Log.i("CSD", "图片文件路径:" + selectList.get(i).getPath());
-                    stringBuffer.append("file://" + selectList.get(i).getPath() + ",");
-                }
-                stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-                String result = stringBuffer.toString();
-                //与JS方法 setImage (image) 交互
-                webView.loadUrl("javascript:setImage('" + result + "')");
-            } else if (requestCode == VIDEOCHOOSE_REQUESTCODE && data != null) {
-                StringBuffer stringBuffer = new StringBuffer();
-                // 图片、视频、音频选择结果回调
-                List<LocalMedia> selectList = PictureSelector.obtainMultipleResult(data);
-                // 例如 LocalMedia 里面返回三种path
-                // 1.media.getPath(); 为原图path
-                // 2.media.getCutPath();为裁剪后path，需判断media.isCut();是否为true  注意：音视频除外
-                // 3.media.getCompressPath();为压缩后path，需判断media.isCompressed();是否为true  注意：音视频除外
-                // 如果裁剪并压缩了，以取压缩路径为准，因为是先裁剪后压缩的
-                for (int i = 0; i < selectList.size(); i++) {
-                    Log.i("CSD", "视频文件路径:" + selectList.get(i).getPath());
-                    stringBuffer.append("file://" + selectList.get(i).getPath() + ",");
-                }
-                stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-                String result = stringBuffer.toString();
-                //与JS方法 setVideo (video) 交互
-                webView.loadUrl("javascript:setVideo('" + result + "')");
-            } else if (requestCode == AUDIOCHOOSE_REQUESTCODE && data != null) {
-                StringBuffer stringBuffer = new StringBuffer();
-                // 图片、视频、音频选择结果回调
-                List<LocalMedia> selectList = PictureSelector.obtainMultipleResult(data);
-                // 例如 LocalMedia 里面返回三种path
-                // 1.media.getPath(); 为原图path
-                // 2.media.getCutPath();为裁剪后path，需判断media.isCut();是否为true  注意：音视频除外
-                // 3.media.getCompressPath();为压缩后path，需判断media.isCompressed();是否为true  注意：音视频除外
-                // 如果裁剪并压缩了，以取压缩路径为准，因为是先裁剪后压缩的
-                for (int i = 0; i < selectList.size(); i++) {
-                    Log.i("CSD", "音频文件路径:" + selectList.get(i).getPath());
-                    stringBuffer.append("file://" + selectList.get(i).getPath() + ",");
-                }
-                stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-                String result = stringBuffer.toString();
-                //与JS方法 setAudio (audio) 交互
-                webView.loadUrl("javascript:setAudio('" + result + "')");
             }
         } else {
             if (requestCode == FILECHOOSER_REQUESTCODE) {
