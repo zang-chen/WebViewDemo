@@ -24,8 +24,8 @@ H5视频播放与全屏功能、
 ## 项目用到的依赖
 **权限管理**  
 **链接: [AndPermission](https://github.com/yanzhenjie/AndPermission)**  
-**图片选择器**  
-**链接: [PictureSelector](https://github.com/LuckSiege/PictureSelector)**  
+**文件选择器**
+**链接: [RxGalleryFinal](https://github.com/FinalTeam/RxGalleryFinal)**
 ## 其他
 **第三方浏览器内核**  
 **链接: [腾讯X5](https://x5.tencent.com/)**  
