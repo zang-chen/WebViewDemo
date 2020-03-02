@@ -19,6 +19,7 @@ H5视频播放与全屏功能、
 **此外项目中还封装了自定义Dialog，自己可根据需求增加构造形参实现【弹窗标题是否展示、取消与确定按钮的展示内容、取消与确定按钮是否展示、取消与确定按钮颜色是否高亮】等动态配置功能。**
 ## 项目地址
 **链接: [WebViewDemo](https://github.com/zang-chen/WebViewDemo)**
+新增JsBridge示例项目
 ## 博客地址
 **链接: [WebView总结](https://blog.csdn.net/zang_chen/article/details/84308316)**
 ## 项目用到的依赖
